@@ -19,14 +19,12 @@ Pixel annotation_tool
     对于 {} 和 [] 这种结构化的数据，还需要定义 def 属性定义所有子节点的类型和名称，依次递归
 
 - source
-```
     - method
         - 'text'
         - 'html'
         - '[attr]'
     - selector : css 选择器
     - filter :  过滤器
-```
 
 如:
 
@@ -52,6 +50,9 @@ Pixel annotation_tool
         {
             name : 'headlines'
             type : '[]',
+            source : { // 可以为空，默认不限定
+                selector : '#detail_content'
+            }
             def  : [
                 {
                     name : 'title',
