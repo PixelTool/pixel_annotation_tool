@@ -1,4 +1,4 @@
-Pixel annotation_tool
+Pixel Annotation_Tool
 ===============
 
 #### 模板结构
