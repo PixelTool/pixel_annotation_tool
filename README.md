@@ -101,5 +101,7 @@ module.exports = {
     xhr -> $(html_content)
 
 
+```
 [string] PixelParser.parse([string] rule, [jQuery_dom] content, [string] url);
 [Promise] PixelParser.fetchAndParse([string] rule, [string] url, [callback] cb);
+```
