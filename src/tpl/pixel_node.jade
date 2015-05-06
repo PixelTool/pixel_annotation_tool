@@ -1,0 +1,13 @@
+.pixel-node
+   .pixel-node-name
+      a(class="pixel-node-action-change-name", href="#", uuid=uuid) #{name}
+   case type
+      when "[]"
+         .pixel-node-type.pixel-node-type-array(uuid=uuid) #{type}
+      when "{}"
+         .pixel-node-type.pixel-node-type-object(uuid=uuid) #{type}
+      when "string"
+         .pixel-node-type.pixel-node-type-string(uuid=uuid) #{type}
+   a.pixel-node-del(uuid=uuid) x
+   - if (type == '[]' || type == '{}' )
+      a.pixel-node-add(uuid=uuid) +

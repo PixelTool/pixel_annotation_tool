@@ -1,3 +1,4 @@
+@nodeHeight : 60px;
 
 
 [data-remodal-id="setting"] {
@@ -15,5 +16,137 @@
   }
 
   .tab-tree {
+    ul {
+      clear:both;
+      list-style: none;
+      margin:0;
+      padding:0;
+      display: block;
+      width:100%;
+      text-align:left;
+
+      li {
+        clear: both;
+        list-style: none;
+
+        .pixel-node {
+
+          display: inline-block;
+
+          .pixel-node-name,
+          .pixel-node-type,
+          .pixel-node-add,
+          .pixel-node-del{
+            height: @nodeHeight;
+            line-height: @nodeHeight;
+            display: inline-block;
+          }
+
+          .pixel-node-name {
+            min-width: 100px;
+            line-height: @nodeHeight;
+            height: @nodeHeight;
+            font-size: 14px;
+            background-color: #D8D8D8;
+            text-align: center;
+          }
+
+          .pixel-node-type {
+            width: 60px;
+            line-height: @nodeHeight;
+            font-size: 14px;
+            color: white;
+            text-align: center;
+
+            &:hover {
+              cursor: pointer;
+            }
+          }
+
+          .pixel-node-type-string {
+            background-color: #F5A623;
+          }
+
+          .pixel-node-type-array {
+            background-color: #4A90E2;
+          }
+
+          .pixel-node-type-object {
+            background-color: #3F9850;
+          }
+
+          a.pixel-node-add {
+            width: 30px;
+            line-height: @nodeHeight;
+            font-size: 14px;
+            background-color: #D8D8D8;
+            text-align: center;
+            text-decoration: none;
+
+            &:hover {
+              cursor: pointer;
+              background-color: #999;
+              color: white;
+            }
+          }
+
+          a.pixel-node-del {
+            width: 10px;
+            line-height: @nodeHeight;
+            font-size: 14px;
+            background-color: #D0021B;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+
+            &:hover {
+              cursor: pointer;
+              background-color: #D16B78;
+            }
+          }
+
+        }
+
+        .pixel-node-next-level {
+          margin-left: 200px;
+        }
+
+        .pixel-node-next-level .pixel-node {
+          margin-left: -100px;
+
+          &:before {
+            content: "　";
+            display: inline-block;
+            width: 100px;
+            height: @nodeHeight;
+            border: 0px;
+            background-image: url("../imgs/node-line-full.png");
+            line-height: @nodeHeight;
+          }
+
+          &.last:before {
+            content: "　";
+            display: inline-block;
+            width: 100px;
+            height: @nodeHeight;
+            border: 0px;
+            background-image: url("../imgs/node-line-last.png");
+            background-repeat: no-repeat;
+            line-height: @nodeHeight;
+          }
+        }
+      }
+    }
+  }
+
+
+}
+
+// hack for remodal
+
+@media only screen and (min-width: 641px) {
+  .remodal {
+    max-width: 1200px;
+    overflow-x: scroll;
   }
 }
