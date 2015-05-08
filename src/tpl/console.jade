@@ -1,0 +1,23 @@
+//
+   Created by rainx on 15/5/7.
+
+.pixel-console-wrap
+   .pixel-console.pure-u-g
+      button.pure-u-1-12.pixel-button.pure-button-primary.pixel-open-tree 设定结构
+      .pixel-button.pure-u-1-12
+         form.pure-form
+            select.pixel-console-node
+               option(value="-") --当前节点--
+      .pure-u-7-12.pixel-console-source
+         input(type="text").pure-u-1.pixel-console-selector
+      .pure-u-1-12
+         form.pure-form
+            select.pixel-console-method
+               option(value="text") --- text ---
+               option(value="[href]") [href]
+               option(value="[src]") [src]
+               option(value="[id]") [id]
+               option(value="[title]") [title]
+               option(value="[value]") [value]
+      button.pure-u-1-12.pure-button.pixel-console-action-inspect inspect
+      button.pure-u-1-12.pure-button.pure-button-primary.pixel-console-action-save Save

@@ -6,18 +6,29 @@ require("remodal");
 require("noty");
 
 var uuid = require('node-uuid');
+var cp = require("./libs/PixelCssPath.js");
 
 require("./less/setting.less");
+require("purecss");
 
 
 // 将模板附在页面上
 var tplSetting = require("./tpl/setting.jade");
+var tplConsole = require("./tpl/console.jade");
 var tplNode = require("./tpl/pixel_node.jade");
+
 
 // 全局对象
 var PixelAnnotationTool = {};
 
+PixelAnnotationTool.inspecting = false;
+PixelAnnotationTool.lastInspectTarget = false;
+
+
 PixelAnnotationTool.rule = null;
+
+
+
 /*
 DEMO Data
 
@@ -49,6 +60,8 @@ $(function() {
 
     console.log("starting");
 
+
+
     var notyStarting = noty({
         text : "---------------------- <br> 标注脚本已经启动，点击键盘'A'呼出标注菜单 <br>------------------------<br>",
         type : "infomation",
@@ -59,6 +72,15 @@ $(function() {
     if ($("[data-remodal-id=setting]").length == 0 ) {
         console.log("prepare appending to body")
         $(tplSetting()).appendTo("body");
+        $(tplConsole()).appendTo("body");
+
+    }
+
+    // restore from localStorage
+    if (localStorage.PixelAnnotationToolRule) {
+        PixelAnnotationTool.rule = JSON.parse(localStorage.PixelAnnotationToolRule);
+        addUUIDAndLastForRule(PixelAnnotationTool.rule);
+        updatePixelNodeList();
     }
 
 });
@@ -66,9 +88,15 @@ $(function() {
 $(document).keypress(function(event) {
 
     // 点击A呼出
-    if (event.keyCode == 65 || event.keyCode == 97) {
-        console.log("A Pressed");
+    if (event.keyCode == "a".charCodeAt(0) || event.keyCode == "A".charCodeAt(0)) {
+        console.log("Alt +  A Pressed");
         openSettingPanel();
+    } else if (event.keyCode == "q".charCodeAt(0) || event.keyCode == "Q".charCodeAt(0)) {
+        stopInspect();
+    } else if (event.keyCode == "h".charCodeAt(0) || event.keyCode == "H".charCodeAt(0)) {
+        console.log(PixelAnnotationTool);
+    } else if (event.keyCode == "v".charCodeAt(0) || event.keyCode == "V".charCodeAt(0)) {
+        console.log(JSON.stringify(PixelAnnotationTool.rule));
     }
 
 });
@@ -104,6 +132,9 @@ function updateSettingByData() {
     addUUIDAndLastForRule(PixelAnnotationTool.rule);
     showRule(PixelAnnotationTool.rule, 0);
 
+    // 更新下面的select
+    updatePixelNodeList();
+
     $(".tab-tree").empty();
     $(".tab-tree").append(contentDom);
 
@@ -127,6 +158,10 @@ function updateSettingByData() {
         var nodeDom = $(nodeHtml);
         if (rule.last) {
             nodeDom.addClass("last");
+        }
+
+        if (rule.source && rule.source.selector) {
+            nodeDom.find(".pixel-node-action-change-name").attr("title", rule.source.selector);
         }
         container.append(nodeDom);
 
@@ -293,3 +328,185 @@ $(document).on("click", ".action-create", function(e) {
     return false;
 });
 /******* Node 操作相关 end *******/
+
+
+/****** console 相关 start ******/
+// 点击打开设定菜单
+$(document).on("click", ".pixel-open-tree", function() {
+    openSettingPanel();
+});
+
+$(document).on("click", ".pixel-console-action-inspect", function() {
+    cancelPixelActiveMask();
+    PixelAnnotationTool.inspecting = true;
+
+    $(this).text("Q to Quit");
+
+    console.log("start inspecting");
+});
+
+$(document).on("click", ".pixel-console-action-save", function() {
+    saveSelector();
+});
+
+
+function updatePixelNodeList(rule, prefix){
+
+    var $selectDom = $(".pixel-console-node");
+    $selectDom.empty();
+
+    $selectDom.append("<option value='-'>--请选择节点--</option>");
+
+    _update(PixelAnnotationTool.rule, "");
+
+    function _update(rule, prefix){
+        if (rule && rule.uuid){
+            $option = $("<option/>");
+            $option.attr("value", rule.uuid);
+            $option.text(rule.name + " {" + prefix + "-" + rule.name + "}");
+            $selectDom.append($option);
+            if ((rule.type == "{}" || rule.type == "[]") && !!rule.def ) {
+                for(var idx in rule.def) {
+                    _update(rule.def[idx], prefix + "-" + rule.name);
+                }
+            }
+        }
+    }
+}
+
+// 设定鼠标移动的动作
+$(document).on("mousemove", function(e) {
+    if (!PixelAnnotationTool.inspecting) {
+        return;
+    }
+
+    var target = e.target;
+
+    if (target == PixelAnnotationTool.lastInspectTarget) {
+        return ;
+    } else {
+        $(PixelAnnotationTool.lastInspectTarget).removeClass("pixel-current-target-mask");
+    }
+
+    PixelAnnotationTool.lastInspectTarget = target;
+
+    $(".pixel-console-selector").val(cp.cssPath(target, true));
+
+    $(target).addClass("pixel-current-target-mask");
+
+    //  设定selector
+});
+
+$(document).on("change", ".pixel-console-selector", function() {
+    if (!PixelAnnotationTool.inspecting) {
+        cancelPixelActiveMask();
+        showPixelActiveMask();
+    }
+});
+
+
+// 切换节点内容
+$(document).on("change", ".pixel-console-node", function() {
+    var uuid = $(this).val();
+
+    if (uuid == "-") {
+        return ;
+    }
+
+    var node = getNodeByUUID(PixelAnnotationTool.rule, uuid);
+    if (node) {
+        if(node.source) {
+            if (node.source.selector != null) {
+                $(".pixel-console-selector").val(node.source.selector);
+            } else {
+                $(".pixel-console-selector").val("");
+            }
+
+            if (node.source.method != null) {
+                $(".pixel-console-method").val(node.source.method);
+            } else {
+                $(".pixel-console-method").val("text");
+            }
+        } else {
+            $(".pixel-console-selector").val("");
+            $(".pixel-console-method").val("text");
+        }
+    }
+});
+
+// 取消inspect
+
+function stopInspect() {
+    PixelAnnotationTool.inspecting = false;
+    $(".pixel-console-action-inspect").text("Inspect");
+    $("*").removeClass("pixel-current-target-mask");
+    PixelAnnotationTool.lastInspectTarget = null;
+    showPixelActiveMask();
+}
+
+
+function saveSelector() {
+    // 获取当前节点
+    var curDom = $(".pixel-console-node").val();
+    var selector = $(".pixel-console-selector").val();
+    var method = $(".pixel-console-method").val();
+
+    if (curDom == "-") {
+        alert("请选择正确的节点");
+        return ;
+    }
+
+    var source = {
+        "selector"  :  selector,
+        "method"    :  method
+    };
+
+    console.log(curDom);
+
+    var node = getNodeByUUID(PixelAnnotationTool.rule, curDom);
+
+    console.log(node);
+
+    if (node) {
+        node.source = source;
+    }
+
+    noty({
+        text : "保存成功，已将将 Selector {" + selector +"} 关联到标签 : " + node.name ,
+        type : "success",
+        layout: "center",
+        timeout: 1000
+    });
+
+}
+/****** console 相关 end ****/
+
+/***
+ 对当前的selecor操作 start
+ **/
+function showPixelActiveMask()  {
+    var selector = $(".pixel-console-selector").val();
+
+    if (!selector || selector == "body") {
+        return;
+    }
+
+    $(selector).addClass("pixel-current-target-active-mask");
+}
+
+
+function cancelPixelActiveMask() {
+    $("*").removeClass("pixel-current-target-active-mask");
+}
+
+/***
+ 对当前的selecor操作 end
+**/
+
+/*** ***/
+$(window).unload(function() {
+    if (PixelAnnotationTool.rule) {
+        localStorage.PixelAnnotationToolRule = JSON.stringify(PixelAnnotationTool.rule);
+    }
+});
+/*** ***/

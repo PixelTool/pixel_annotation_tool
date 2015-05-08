@@ -33,6 +33,7 @@
 
           display: inline-block;
 
+          .pixel-node-source,
           .pixel-node-name,
           .pixel-node-type,
           .pixel-node-add,
@@ -105,6 +106,29 @@
             }
           }
 
+
+          a.pixel-node-source {
+            width: 10px;
+            line-height: @nodeHeight;
+            font-size: 14px;
+            background-color: #f0f0f0;
+            text-align: center;
+            text-decoration: none;
+            color: #ccc;
+
+            &.active {
+              background-color: #62c462;
+              color: #FFFF88;
+            }
+
+            &:hover {
+              cursor: pointer;
+              background-color: #333;
+              color: white;
+            }
+
+          }
+
         }
 
         .pixel-node-next-level {
@@ -138,8 +162,75 @@
       }
     }
   }
+}
 
 
+
+@consoleHeight : 60px;
+
+// 控制面板
+.pixel-console-wrap {
+  position: fixed;
+  bottom: 0; left: 0;
+  z-index: 9999; /*--Keeps the panel on top of all other elements--*/
+
+  border-bottom: none;
+  width: 100%;
+  margin: 0 0%;
+
+  .pixel-console {
+    height: @consoleHeight;
+    line-height: @consoleHeight;
+    background: #e3e2e2;
+    border: 1px solid #c3c3c3;
+  }
+
+
+  .pixel-open-tree,.pixel-console-action-inspect, .pixel-console-action-save {
+    height: @consoleHeight;
+  }
+
+  .pixel-console-action-save {
+    background-color: rgb(28, 184, 65);
+  }
+
+
+  .pixel-console-source {
+    background-color:white;
+  }
+
+
+  .pixel-console-selector {
+    height:@nodeHeight;
+    border:0px;
+    color:#004444;
+    padding-left:4px;
+    padding-right:4px;
+  }
+
+  select.pixel-console-node {
+    height:@nodeHeight;
+    line-height: @nodeHeight;
+    wdith: 100%;
+    border:0px;
+  }
+
+  select.pixel-console-method {
+    height:@nodeHeight;
+    line-height: @nodeHeight;
+    wdith: 100%;
+    border:0px;
+  }
+}
+
+// 遮罩的风格
+.pixel-current-target-mask {
+  border: 1px solid #6f0300;
+  box-shadow:0px 0px 8px #f00;
+}
+
+.pixel-current-target-active-mask {
+  background-color: rgba(29, 199, 74, 0.5);
 }
 
 // hack for remodal
