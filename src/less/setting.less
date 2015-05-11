@@ -221,6 +221,23 @@
     wdith: 100%;
     border:0px;
   }
+
+
+  .pixel-console-menu {
+    height: @nodeHeight;
+    line-height: @nodeHeight;
+    border-top:1px solid #ccc;
+    background-color:white;
+    text-align: left;
+  }
+
+  .pure-menu-list,.pure-menu-item,a.pure-menu-link  {
+    height: @nodeHeight;
+    line-height: @nodeHeight;
+    padding-top:0px;
+    padding-bottom: 0px;
+  }
+
 }
 
 // 遮罩的风格
@@ -231,6 +248,22 @@
 
 .pixel-current-target-active-mask {
   background-color: rgba(29, 199, 74, 0.5);
+}
+
+.pixel-help-body {
+  text-align: left;
+  padding-left:30px;
+  padding-right:30px;
+}
+
+
+// view rule
+
+.view-rule-ta,.view-sample-data {
+  min-height:400px;
+  min-width: 500px;
+  width: 90%;
+  background-color: #ffffee;
 }
 
 // hack for remodal

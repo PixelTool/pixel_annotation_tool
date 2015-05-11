@@ -6,8 +6,14 @@
   "background": {
     "scripts": ["./build/background.js"]
   },
+  "icons":
+  {
+    "16": "spider_16.png",
+    "48": "spider_48.png",
+    "128": "spider_128.png"
+  },
   "browser_action": {
-    "default_icon": "./icon.png",
+    "default_icon": "./spider-black_48.png",
     "default_title": "标注"
   },
   "permissions": [

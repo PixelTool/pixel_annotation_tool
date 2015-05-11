@@ -4,19 +4,26 @@
 require("jquery");
 require("remodal");
 require("noty");
+// var jsdom = require("jsdom");
 
-var uuid = require('node-uuid');
-var cp = require("./libs/PixelCssPath.js");
+var uuid                = require('node-uuid');
+var cp                  = require("./libs/PixelCssPath.js");
+var stringify           = require("json-stringify-pretty-compact");
+
+var encodeHelper        = require("./libs/encode_helper");
+var Pixel               = require("pixeljs");
 
 require("./less/setting.less");
 require("purecss");
 
 
 // 将模板附在页面上
-var tplSetting = require("./tpl/setting.jade");
-var tplConsole = require("./tpl/console.jade");
-var tplNode = require("./tpl/pixel_node.jade");
-
+var tplSetting      = require("./tpl/setting.jade");
+var tplConsole      = require("./tpl/console.jade");
+var tplNode         = require("./tpl/pixel_node.jade");
+var tplViewRule     = require("./tpl/view_rule.jade");
+var tplHelp         = require("./tpl/help.jade");
+var tplSampleData   = require("./tpl/sampledata.jade");
 
 // 全局对象
 var PixelAnnotationTool = {};
@@ -26,6 +33,8 @@ PixelAnnotationTool.lastInspectTarget = false;
 
 
 PixelAnnotationTool.rule = null;
+
+PixelAnnotationTool.shortcutOn = true;
 
 
 
@@ -73,7 +82,9 @@ $(function() {
         console.log("prepare appending to body")
         $(tplSetting()).appendTo("body");
         $(tplConsole()).appendTo("body");
-
+        $(tplViewRule()).appendTo("body");
+        $(tplHelp()).appendTo("body");
+        $(tplSampleData()).appendTo("body");
     }
 
     // restore from localStorage
@@ -87,6 +98,10 @@ $(function() {
 
 $(document).keypress(function(event) {
 
+    if(!PixelAnnotationTool.shortcutOn) {
+        return true;
+    }
+
     // 点击A呼出
     if (event.keyCode == "a".charCodeAt(0) || event.keyCode == "A".charCodeAt(0)) {
         console.log("Alt +  A Pressed");
@@ -96,7 +111,7 @@ $(document).keypress(function(event) {
     } else if (event.keyCode == "h".charCodeAt(0) || event.keyCode == "H".charCodeAt(0)) {
         console.log(PixelAnnotationTool);
     } else if (event.keyCode == "v".charCodeAt(0) || event.keyCode == "V".charCodeAt(0)) {
-        console.log(JSON.stringify(PixelAnnotationTool.rule));
+        console.log(stringify(PixelAnnotationTool.rule));
     }
 
 });
@@ -349,6 +364,26 @@ $(document).on("click", ".pixel-console-action-save", function() {
     saveSelector();
 });
 
+$(document).on("click", ".pixel-view-rule", function(){
+    viewRule();
+});
+
+$(document).on("mouseover", ".pixel-save-rule", function(){
+    genSaveRule(this);
+});
+
+$(document).on("click", ".pixel-toggle-shortcut", function() {
+    toggleShortcut();
+});
+
+$(document).on("click", ".pixel-help", function() {
+    pixelHelp();
+});
+
+
+$(document).on("click", ".pixel-sample-data", function() {
+    sampleData();
+});
 
 function updatePixelNodeList(rule, prefix){
 
@@ -479,6 +514,73 @@ function saveSelector() {
     });
 
 }
+
+
+function viewRule() {
+    console.log("action view rule");
+    var dom =  $("[data-remodal-id=view-rule]");
+    dom.remodal().open({
+        closeOnAnyClick:false
+    });
+
+    $(".view-rule-ta").text(stringify(PixelAnnotationTool.rule));
+}
+
+function genSaveRule(obj) {
+    $(obj).attr("href", "data:application/octet-stream;base64," + encodeHelper.base64Encode(stringify(PixelAnnotationTool.rule)));
+}
+
+
+function toggleShortcut() {
+    if (PixelAnnotationTool.shortcutOn) {
+        PixelAnnotationTool.shortcutOn = false;
+        noty({
+            text : "Keyboard shortcut is OFF",
+            type : "infomation",
+            layout: "center",
+            timeout: 2000
+        });
+    } else {
+        PixelAnnotationTool.shortcutOn = true;
+        noty({
+            text : "Keyboard shortcut is ON",
+            type : "infomation",
+            layout: "center",
+            timeout: 2000
+        });
+    }
+}
+
+
+function pixelHelp() {
+    var dom =  $("[data-remodal-id=help]");
+    dom.remodal().open({
+        closeOnAnyClick:false
+    });
+}
+
+function sampleData() {
+    if (PixelAnnotationTool.rule == null) {
+        alert("Rule is Empty, Please create one rule first!");
+        return;
+    }
+
+    var pixel = new Pixel();
+    pixel
+        .setup(JSON.stringify(PixelAnnotationTool.rule), window.location.href, $, null)
+        .then(function(result) {
+            var dom =  $("[data-remodal-id=sampledata]");
+            dom.remodal().open({
+                closeOnAnyClick:false
+            });
+
+            $(".view-sample-data").text(stringify(result)); 
+        }, function(e) {
+            console.log("error" + e);
+        });
+
+}
+
 /****** console 相关 end ****/
 
 /***

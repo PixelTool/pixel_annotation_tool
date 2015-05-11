@@ -1,0 +1,24 @@
+{
+  "name": "annotation_tool",
+  "version": "1.0.0",
+  "description": "Pixel Annotation_Tool ===============",
+  "main": "webpack.config.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://git.xiaosheng.fm:8080/git/rainx/annotation_tool.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^0.19.0",
+    "jsdom": "^5.3.0",
+    "json-stringify-pretty-compact": "^1.0.1",
+    "pixeljs": "^1.0.0"
+  }
+}
