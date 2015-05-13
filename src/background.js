@@ -6,17 +6,7 @@
 chrome.browserAction.onClicked.addListener(function(tab) {
     console.log("injecting content script");
     // 注入代码，由于bootstrap比较大，所以暂时用inject的方式而不是commonjs的方式引入
-    /*
-    chrome.tabs.insertCSS(null, {
-        file:"./bower_components/bootstrap/dist/css/bootstrap.css"
-    });
-    */
     chrome.tabs.executeScript(null, {
         file:"./build/main.js"
     });
-    /*
-    chrome.tabs.executeScript(null, {
-        file:"./bower_components/bootstrap/dist/js/bootstrap.js"
-    });
-    */
 });

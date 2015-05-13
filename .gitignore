@@ -86,3 +86,12 @@ build/Release
 node_modules
 
 src/demo
+
+PixelAnnotationTool.pem
+PixelAnnotationTool/
+
+src/tpl/*.html
+src/less/*.css
+
+.DS_Store
+packaged
