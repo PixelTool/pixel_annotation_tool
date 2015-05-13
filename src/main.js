@@ -574,7 +574,7 @@ function sampleData() {
                 closeOnAnyClick:false
             });
 
-            $(".view-sample-data").text(stringify(result)); 
+            $(".view-sample-data").text(stringify(result));
         }, function(e) {
             console.log("error" + e);
         });

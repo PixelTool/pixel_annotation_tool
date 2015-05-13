@@ -106,3 +106,40 @@ module.exports = {
 [string] PixelParser.parse([string] rule, [jQuery_dom] content, [string] url);
 [Promise] PixelParser.fetchAndParse([string] rule, [string] url, [callback] cb);
 ```
+
+
+#### Filter (Ref by Angular JS Filter System)
+
+参考AngularJS的Filter实现方式， filter 之间可以使用 | 管道进行叠加 如：
+
+```
+filter1 | filter2
+```
+
+就是应用完filter1 之后再应用filter2
+
+filter 可以跟参数，
+
+```
+filter1:argument1:argument2
+````
+
+* date filter (日期filter)
+```
+{{ 1304375948024 | date }}
+{{ 1304375948024 | date:"MM/dd/yyyy @ h:mma" }}
+```
+
+* json filter
+```
+{{ {foo: "bar", baz: 23} | json }}
+```
+
+* lowercase Format a string to lower case.
+* uppercase Format a string to upper case.
+* substring 等同于javascript 的 String.substring方法
+* substr 等同于javascript String.substr方法
+* split 等同于 javascript 的String.split方法, 返回数组格式
+* join 等同于javascript 的 Array.join方法，输入是数组，返回字符串
+* replace 等同于javascript的 stringObject.replace(regexp/substr,replacement) 可以使用正则表达式
+* match 等于于javascript的 stringObject.match(regexp) 返回匹配到的数值
