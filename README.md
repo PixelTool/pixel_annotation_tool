@@ -122,7 +122,7 @@ filter 可以跟参数，
 
 ```
 filter1:argument1:argument2
-````
+```
 
 * date filter (日期filter)
 ```
