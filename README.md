@@ -140,6 +140,5 @@ filter1:argument1:argument2
 * substring 等同于javascript 的 String.substring方法
 * substr 等同于javascript String.substr方法
 * split 等同于 javascript 的String.split方法, 返回数组格式
-* join 等同于javascript 的 Array.join方法，输入是数组，返回字符串
 * replace 等同于javascript的 stringObject.replace(regexp/substr,replacement) 可以使用正则表达式
-* match 等于于javascript的 stringObject.match(regexp) 返回匹配到的数值
+* match 等于于javascript的 stringObject.match(regexp) 返回匹配到的内容
