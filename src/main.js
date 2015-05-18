@@ -2,6 +2,7 @@
  * Created by rainx on 15/5/4.
  */
 require("jquery");
+// configure remoal
 require("remodal");
 require("noty");
 // var jsdom = require("jsdom");
@@ -9,9 +10,9 @@ require("noty");
 var uuid                = require('node-uuid');
 var cp                  = require("./libs/PixelCssPath.js");
 var stringify           = require("json-stringify-pretty-compact");
-
-var encodeHelper        = require("./libs/encode_helper");
+var encodeHelper        = require("./libs/EncodeHelper");
 var Pixel               = require("pixeljs");
+var RuleStorage         = require("./libs/RuleStorage");
 
 require("./less/setting.less");
 require("purecss");
@@ -24,6 +25,11 @@ var tplNode         = require("./tpl/pixel_node.jade");
 var tplViewRule     = require("./tpl/view_rule.jade");
 var tplHelp         = require("./tpl/help.jade");
 var tplSampleData   = require("./tpl/sampledata.jade");
+var tplSaveRule     = require("./tpl/save_rule.jade");
+var tplLoadRule     = require("./tpl/load_rule.jade");
+var tplLoadRuleTable = require("./tpl/load_rule_table.jade");
+var tplLoadRuleTableTr = require("./tpl/load_rule_table_tr.jade");
+var tplAddFilter    = require("./tpl/add_filter.jade");
 
 // 全局对象
 var PixelAnnotationTool = {};
@@ -31,12 +37,11 @@ var PixelAnnotationTool = {};
 PixelAnnotationTool.inspecting = false;
 PixelAnnotationTool.lastInspectTarget = false;
 
-
 PixelAnnotationTool.rule = null;
-
 PixelAnnotationTool.shortcutOn = true;
+PixelAnnotationTool.autosave = false;
 
-
+PixelAnnotationTool.currentRuleRegex = null;
 
 /*
 DEMO Data
@@ -64,12 +69,22 @@ DEMO Data
 
 */
 
+// auto save every 10 sec
+var autoSaveTimer = setInterval(function() {
+    if (PixelAnnotationTool.rule && !PixelAnnotationTool.autosave) {
+        console.log("prepare autosave");
+        RuleStorage.updateRule(RuleStorage.TYPE_AUTOSAVE, window.location.href, PixelAnnotationTool.rule,
+        function() {
+            console.log("autosaved!");
+            PixelAnnotationTool.autosave = true;
+        });
+    }
+}, 10000);
+
 // bootstrap
 $(function() {
 
     console.log("starting");
-
-
 
     var notyStarting = noty({
         text : "---------------------- <br> 标注脚本已经启动，点击键盘'A'呼出标注菜单 <br>------------------------<br>",
@@ -85,14 +100,43 @@ $(function() {
         $(tplViewRule()).appendTo("body");
         $(tplHelp()).appendTo("body");
         $(tplSampleData()).appendTo("body");
+        $(tplSaveRule()).appendTo("body");
+        $(tplLoadRule()).appendTo("body");
+        $(tplAddFilter()).appendTo("body");
     }
 
-    // restore from localStorage
-    if (localStorage.PixelAnnotationToolRule) {
-        PixelAnnotationTool.rule = JSON.parse(localStorage.PixelAnnotationToolRule);
-        addUUIDAndLastForRule(PixelAnnotationTool.rule);
-        updatePixelNodeList();
-    }
+    // restore from storage
+    RuleStorage.getAllRuleByDomain(window.location.hostname, function(rules) {
+        // 先尝试从 autosave 恢复
+        if (rules[RuleStorage.TYPE_AUTOSAVE]
+            && rules[RuleStorage.TYPE_AUTOSAVE][window.location.href]
+            && rules[RuleStorage.TYPE_AUTOSAVE][window.location.href]['name']) {
+            PixelAnnotationTool.rule = rules[RuleStorage.TYPE_AUTOSAVE][window.location.href];
+        } else {
+            // 然后尝试从 regex 规则回复
+            var allRegexRules = rules[RuleStorage.TYPE_REGEX];
+            console.log(allRegexRules);
+            for(var key in allRegexRules) {
+                var rule = allRegexRules[key];
+
+                if (rule
+                    && rule.regex
+                    && new RegExp(rule.regex).test(window.location.href)) {
+                    PixelAnnotationTool.rule = rule;
+                    PixelAnnotationTool.currentRuleRegex = {
+                        "name": key,
+                        "regex": rule.regex
+                    };
+                }
+            }
+        }
+
+        if (PixelAnnotationTool.rule) {
+            addUUIDAndLastForRule(PixelAnnotationTool.rule);
+            updatePixelNodeList();
+        }
+    });
+
 
 });
 
@@ -143,6 +187,7 @@ function tabSwitch() {
 
 /******* Node 操作相关 start *******/
 function updateSettingByData() {
+    updatedStructrue();
     var contentDom = $("<ul/>");
     addUUIDAndLastForRule(PixelAnnotationTool.rule);
     showRule(PixelAnnotationTool.rule, 0);
@@ -154,6 +199,11 @@ function updateSettingByData() {
     $(".tab-tree").append(contentDom);
 
     function showRule(rule, level) {
+
+        if (rule == null) {
+            return;
+        }
+
         var nodeName = rule.name;
         var nodeType = rule.type;
         var nodeDef = rule.def;
@@ -169,7 +219,7 @@ function updateSettingByData() {
             }
         }
         var nodeHtml = tplNode(rule);
-        console.log(nodeHtml);
+        // console.log(nodeHtml);
         var nodeDom = $(nodeHtml);
         if (rule.last) {
             nodeDom.addClass("last");
@@ -192,6 +242,10 @@ function updateSettingByData() {
 
 // 遍历给node增加随机id
 function addUUIDAndLastForRule(rule) {
+    if (rule == null) {
+        return ;
+    }
+
     if (rule){
 
         if(!rule.uuid) {
@@ -200,6 +254,11 @@ function addUUIDAndLastForRule(rule) {
 
         if ((rule.type == "{}" || rule.type == "[]") && !!rule.def ) {
             for(var idx in rule.def) {
+
+                if (!rule.def[idx]) {
+                    continue;
+                }
+
                 addUUIDAndLastForRule(rule.def[idx]);
 
                 if (idx == rule.def.length - 1) {
@@ -239,13 +298,26 @@ function getNodeByUUID(rule, uuid) {
 
 // 根据uuid移除节点，注意默认不移除当前节点
 function removeNodeByUUID(rule, uuid) {
+    if (rule == null) {
+        return;
+    }
+
     if (rule.type == "{}" || rule.type == "[]") {
+        var toDeleteId = -1;
         for(var idx in rule.def) {
             var cur = rule.def[idx];
+
+            if (!cur) {
+                continue;
+            }
+
             removeNodeByUUID(cur, uuid);
             if (cur.uuid == uuid) {
-                delete rule.def[idx];
+                toDeleteId = idx;
             }
+        }
+        if (toDeleteId > -1) {
+            rule.def.splice(toDeleteId, 1);
         }
     }
 }
@@ -360,6 +432,10 @@ $(document).on("click", ".pixel-console-action-inspect", function() {
     console.log("start inspecting");
 });
 
+$(document).on("click", ".pixel-console-filter", function(){
+    addFilter();
+});
+
 $(document).on("click", ".pixel-console-action-save", function() {
     saveSelector();
 });
@@ -368,8 +444,8 @@ $(document).on("click", ".pixel-view-rule", function(){
     viewRule();
 });
 
-$(document).on("mouseover", ".pixel-save-rule", function(){
-    genSaveRule(this);
+$(document).on("mouseover", ".pixel-download-rule", function(){
+    genDownloadRule(this);
 });
 
 $(document).on("click", ".pixel-toggle-shortcut", function() {
@@ -383,6 +459,18 @@ $(document).on("click", ".pixel-help", function() {
 
 $(document).on("click", ".pixel-sample-data", function() {
     sampleData();
+});
+
+$(document).on("click", ".pixel-save-rule", function() {
+    saveRule();
+});
+
+$(document).on("click", ".pixel-save-template", function() {
+    saveTemplate();
+});
+
+$(document).on("click", ".pixel-load-rule", function() {
+    loadRule();
 });
 
 function updatePixelNodeList(rule, prefix){
@@ -480,6 +568,75 @@ function stopInspect() {
 }
 
 
+function addFilter() {
+    var curDom = $(".pixel-console-node").val();
+    var selector = $(".pixel-console-selector").val();
+    var method = $(".pixel-console-method").val();
+
+    if (curDom == "-") {
+        alert("请选择正确的节点");
+        return ;
+    }
+
+    var node = getNodeByUUID(PixelAnnotationTool.rule, curDom);
+
+    var dom =  $("[data-remodal-id=add-filter]");
+    dom.remodal().open({
+        closeOnAnyClick:false
+    });
+
+    var inputFilter = dom.find("[name=pixel-filter]");
+
+    if (node.filter) {
+        inputFilter.val(node.filter);
+    } else {
+        inputFilter.val("");
+    }
+
+}
+
+$(document).on("click", ".pixel-update-filter", function() {
+    var curDom = $(".pixel-console-node").val();
+    if (curDom == "-") {
+        alert("请选择正确的节点");
+        return ;
+    }
+
+    var node = getNodeByUUID(PixelAnnotationTool.rule, curDom);
+    var dom =  $("[data-remodal-id=add-filter]");
+    var inputFilter = dom.find("[name=pixel-filter]");
+
+    var filter = $.trim(inputFilter.val());
+
+    if (filter == "") {
+        delete node["filter"];
+        _suc()
+        return false;
+    } else {
+        var ok = Pixel.validateRule(filter);
+        if (ok) {
+            node.filter = filter;
+            _suc();
+            return false;
+        } else {
+            alert("Not a validate filter");
+            return false;
+        }
+    }
+
+    function _suc() {
+        noty({
+            text : "更新成功" ,
+            type : "success",
+            layout: "center",
+            timeout: 1000
+        });
+    }
+
+    return false;
+});
+
+
 function saveSelector() {
     // 获取当前节点
     var curDom = $(".pixel-console-node").val();
@@ -500,11 +657,13 @@ function saveSelector() {
 
     var node = getNodeByUUID(PixelAnnotationTool.rule, curDom);
 
-    console.log(node);
+    // console.log(node);
 
     if (node) {
         node.source = source;
     }
+
+    updatedStructrue();
 
     noty({
         text : "保存成功，已将将 Selector {" + selector +"} 关联到标签 : " + node.name ,
@@ -526,10 +685,244 @@ function viewRule() {
     $(".view-rule-ta").text(stringify(PixelAnnotationTool.rule));
 }
 
-function genSaveRule(obj) {
+function genDownloadRule(obj) {
     $(obj).attr("href", "data:application/octet-stream;base64," + encodeHelper.base64Encode(stringify(PixelAnnotationTool.rule)));
 }
 
+function saveRule() {
+    var hostname = window.location.hostname;
+    var url = window.location.href;
+    var dom =  $("[data-remodal-id=save-rule]");
+    dom.remodal().open({
+        closeOnAnyClick:false
+    });
+
+    if (PixelAnnotationTool.currentRuleRegex!= null) {
+        $("[data-remodal-id=save-rule]").find("#rule-name").val(PixelAnnotationTool.currentRuleRegex.name);
+        $("[data-remodal-id=save-rule]").find("#rule-regex").val(PixelAnnotationTool.currentRuleRegex.regex);
+    }
+}
+
+$(document).on('confirm', '.remodal[data-remodal-id="save-rule"]', function () {
+    var name = $.trim($(this).find("#rule-name").val());
+    var regex = $.trim($(this).find("#rule-regex").val());
+
+    if (name == "" ) {
+        alert("name can not empty");
+        return false;
+    }
+
+    if (regex == "" || !new RegExp(regex).test(window.location.href) ) {
+        alert("Regular Expressions is not match this curl");
+        return false;
+    }
+
+    if (PixelAnnotationTool.rule) {
+        PixelAnnotationTool.rule.regex = regex;
+        RuleStorage.updateRule(RuleStorage.TYPE_REGEX, name, PixelAnnotationTool.rule, function() {
+            noty({
+                text : "保存成功",
+                type : "success",
+                layout: "center",
+                timeout: 1000
+            });
+        });
+    }
+
+    console.log(name);
+});
+
+function saveTemplate() {
+
+    var name = prompt("请输入要保存模板的名字", "");
+
+    name = $.trim(name);
+
+    if (name == "") {
+        alert("模板名字不能为空");
+        return;
+    }
+
+    if (PixelAnnotationTool.rule) {
+        RuleStorage.updateRule(RuleStorage.TYPE_TEMPLATE, name, PixelAnnotationTool.rule, function() {
+            noty({
+                text : "保存模板成功",
+                type : "success",
+                layout: "center",
+                timeout: 1000
+            });
+        });
+    }
+
+}
+
+function loadRule() {
+    console.log("hostname is " + window.location.hostname);
+    RuleStorage.getAllRuleByDomain(window.location.hostname, function(rules) {
+        var templates = rules[RuleStorage.TYPE_TEMPLATE];
+        var regexRules = rules[RuleStorage.TYPE_REGEX];
+        var autoSaveRules = rules[RuleStorage.TYPE_AUTOSAVE];
+
+        console.log(regexRules);
+
+        var dom =  $("[data-remodal-id=load-rule]");
+        dom.remodal().open({
+            closeOnAnyClick:false
+        });
+
+        if(templates == null || Object.keys(templates).length == 0) {
+            dom.find(".emptyTemplates").show();
+            dom.find(".templatesContent").hide();
+        } else {
+            dom.find(".emptyTemplates").hide();
+            dom.find(".templatesContent").show();
+            var container = dom.find(".templatesContent");
+            container.empty();
+            var table = $(tplLoadRuleTable());
+            container.append(table);
+
+            for (var key in templates) {
+
+                var attrs = {
+                    "name": key,
+                    "regex": "",
+                    "type": RuleStorage.TYPE_TEMPLATE
+                };
+
+                table.append($(tplLoadRuleTableTr(attrs)));
+            }
+
+            $(table).on("click", "[action=load]", loadAction);
+            $(table).on("click", "[action=delete]", deleteAction);
+            $(table).on("click", "[action=view]", viewAction);
+        }
+
+        if (regexRules == null || Object.keys(regexRules.length) == 0) {
+            dom.find(".emptyRegexRules").show();
+            dom.find(".regexRulesContent").hide();
+        } else {
+            dom.find(".emptyRegexRules").hide();
+            dom.find(".regexRulesContent").show();
+
+            var container = dom.find(".regexRulesContent");
+            container.empty();
+            var table = $(tplLoadRuleTable());
+            container.append(table);
+
+            for (var key in regexRules) {
+
+                var attrs = {
+                    "name": key,
+                    "regex": regexRules[key].regex,
+                    "type": RuleStorage.TYPE_REGEX
+                };
+
+                table.append($(tplLoadRuleTableTr(attrs)));
+            }
+
+            $(table).on("click", "[action=load]", loadAction);
+            $(table).on("click", "[action=delete]", deleteAction);
+            $(table).on("click", "[action=view]", viewAction);
+        }
+
+        if (autoSaveRules == null || Object.keys(autoSaveRules.length) == 0) {
+            dom.find(".emptyAutoSaveRules").show();
+            dom.find(".autoSaveRulesContent").hide();
+        } else {
+            dom.find(".emptyAutoSaveRules").hide();
+            dom.find(".autoSaveRulesContent").show();
+            var container = dom.find(".autoSaveRulesContent");
+            container.empty();
+            var table = $(tplLoadRuleTable());
+            container.append(table);
+
+            for (var key in autoSaveRules) {
+
+                var attrs = {
+                    "name": key,
+                    "regex": "",
+                    "type": RuleStorage.TYPE_AUTOSAVE
+                };
+
+                table.append($(tplLoadRuleTableTr(attrs)));
+            }
+
+            $(table).on("click", "[action=load]", loadAction);
+            $(table).on("click", "[action=delete]", deleteAction);
+            $(table).on("click", "[action=view]", viewAction);
+        }
+
+
+        function loadAction() {
+            var type = $(this).attr("type");
+            var name = $(this).attr("key");
+            var ok = confirm("Are you sure to load this rule to current context ? current rule will be replace ");
+            if (!ok) {
+                return false;
+            }
+
+            if (rules[type] && rules[type][name]) {
+                var rule = rules[type][name];
+                PixelAnnotationTool.rule = rule;
+                if (PixelAnnotationTool.rule) {
+                    addUUIDAndLastForRule(PixelAnnotationTool.rule);
+                    updatePixelNodeList();
+                }
+
+                noty({
+                    text : "Load Rule Successful",
+                    type : "infomation",
+                    layout: "center",
+                    timeout: 2000
+                });
+            }
+
+            return false;
+        }
+
+        function deleteAction() {
+            var type = $(this).attr("type");
+            var name = $(this).attr("key");
+            var tr = $(this).parents("tr");
+            var ok = confirm("are you sure to delete this rule?");
+            if (!ok) {
+                return false;
+            }
+
+            tr.remove();
+
+            RuleStorage.deleteRuleByType(name, type, function() {
+                noty({
+                    text : "Delete Successful",
+                    type : "infomation",
+                    layout: "center",
+                    timeout: 2000
+                });
+            });
+
+            return false;
+        }
+
+        function viewAction() {
+            noty({
+                text : "Please View the rule Structure on Chrome DevTool Console",
+                type : "infomation",
+                layout: "center",
+                timeout: 2000
+            });
+            var type = $(this).attr("type");
+            var name = $(this).attr("key");
+            if (rules[type] && rules[type][name]) {
+                var rule = rules[type][name];
+                console.log(stringify(rule));
+            }
+            return false;
+        }
+
+    });
+
+
+}
 
 function toggleShortcut() {
     if (PixelAnnotationTool.shortcutOn) {
@@ -601,14 +994,23 @@ function cancelPixelActiveMask() {
     $("*").removeClass("pixel-current-target-active-mask");
 }
 
+function updatedStructrue() {
+    PixelAnnotationTool.autosave = false;
+}
+
 /***
  对当前的selecor操作 end
 **/
 
 /*** ***/
-$(window).unload(function() {
-    if (PixelAnnotationTool.rule) {
-        localStorage.PixelAnnotationToolRule = JSON.stringify(PixelAnnotationTool.rule);
+$(window).on("beforeunload", function() {
+    if (PixelAnnotationTool.rule && !PixelAnnotationTool.autosave) {
+        console.log("need to save before unload!");
+        RuleStorage.updateRule(RuleStorage.TYPE_AUTOSAVE, window.location.href, PixelAnnotationTool.rule, function() {
+            PixelAnnotationTool.autosave = true;
+            console.log("saved!");
+            window.close();
+        });
     }
 });
 /*** ***/

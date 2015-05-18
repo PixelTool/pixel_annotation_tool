@@ -13,7 +13,8 @@ module.exports = {
     devtool : "source-map",
     entry : {
         background: './src/background.js',
-        main: './src/main.js'
+        main: './src/main.js',
+        test: './src/test.js'
     },
     output: {
         path: 'build',

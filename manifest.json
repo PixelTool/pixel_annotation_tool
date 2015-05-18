@@ -1,8 +1,8 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Annotation Tool",
   "description": "This extension for generate fetch script",
-  "version": "1.4",
+  "version": "1.5",
   "background": {
     "scripts": ["./build/background.js"]
   },
@@ -16,12 +16,23 @@
     "default_icon": "./spider-black_48.png",
     "default_title": "标注"
   },
+  /// for test
+  "content_scripts" : [{
+    "matches": ["http://rainx.cn/"],
+    "js" : ["./build/test.js"]
+  }],
+  "web_accessible_resources" : [
+    "build/test.js.map",
+    "build/main.js.map"
+  ],
+  /// for test end
   "permissions": [
     "tabs",
     "contextMenus",
     "http://*/*",
     "https://*/*",
     "webRequest",
-    "webRequestBlocking"
+    "webRequestBlocking",
+    "storage"
   ]
 }

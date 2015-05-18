@@ -1,0 +1,18 @@
+//
+   Created by rainx on 15/5/15.
+
+.remodal(data-remodal-id="save-rule", data-remodal-options="closeOnAnyClick:false,closeOnConfirm:false")
+   div(style="height:10px")
+   h1 Save Rule
+   div(style="height:10px")
+   .pure-form.pure-form-aligned
+      fieldset
+         .pure-control-group
+            label(for="name") Rule Name
+            input(id="rule-name", type="text",placeholder="Rule Name",style="width:300px;")
+         .pure-control-group
+            label(for="rule-regex") Regex to match urls
+            input(id="rule-regex",type="text",placeholder="Regex to match URLS",style="width:300px;")
+   div(style="height:10px")
+   a.remodal-confirm(href="#") Save
+   a.remodal-cancel(href="#") Close
