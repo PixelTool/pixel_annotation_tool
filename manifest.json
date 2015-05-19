@@ -1,7 +1,7 @@
 {
   "manifest_version": 4,
-  "name": "Annotation Tool",
-  "description": "This extension for generate fetch script",
+  "name": "Pixel Annotation Tool",
+  "description": "This extension for generate pixel rule script",
   "version": "1.6",
   "background": {
     "scripts": ["./build/background.js"]
@@ -14,7 +14,7 @@
   },
   "browser_action": {
     "default_icon": "./spider-black_48.png",
-    "default_title": "标注"
+    "default_title": "Annotation"
   },
   /// for test
   "content_scripts" : [{

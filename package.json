@@ -16,9 +16,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cheerio": "^0.19.0",
-    "jsdom": "^5.3.0",
     "json-stringify-pretty-compact": "^1.0.1",
     "pixeljs": "^1.0.0"
+  },
+  "devDependencies": {
+      "webpack" : "",
+      "bower-webpack-plugin " : "",
+      "style-loader" : "",
+      "css-loader" : "",
+      "less-loader" : "",
+      "jade-loader" : "",
+      "url-loader" : "",
+      "html-loader" : ""
   }
 }
