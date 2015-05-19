@@ -95,3 +95,4 @@ src/less/*.css
 
 .DS_Store
 packaged/*.crx
+build/
