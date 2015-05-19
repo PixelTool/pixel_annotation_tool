@@ -89,17 +89,9 @@ $(function() {
 
     console.log("starting");
 
-
-
-    var notyStarting = noty({
-        text : "---------------------- <br> 标注脚本已经启动，点击键盘'A'呼出标注菜单 <br>------------------------<br>",
-        type : "infomation",
-        layout: "center",
-        timeout: 2000
-    });
+    pixelAlert("---------------------- <br> Pixel Annotation Tool <br>------------------------<br>");
 
     if ($("[data-remodal-id=setting]").length == 0 ) {
-        console.log("prepare appending to body")
         $(tplSetting()).appendTo("body");
         $(tplConsole()).appendTo("body");
         $(tplViewRule()).appendTo("body");
@@ -110,7 +102,7 @@ $(function() {
         $(tplAddFilter()).appendTo("body");
 
         // activate tooltip
-        $('.tooltip').tooltipster();
+        $('.pixel-tooltip').tooltipster();
     }
 
     // restore from storage
@@ -123,7 +115,6 @@ $(function() {
         } else {
             // 然后尝试从 regex 规则回复
             var allRegexRules = rules[RuleStorage.TYPE_REGEX];
-            console.log(allRegexRules);
             for(var key in allRegexRules) {
                 var rule = allRegexRules[key];
 
@@ -159,7 +150,7 @@ $(document).keypress(function(event) {
         stopInspect();
     } else if (event.keyCode == "v".charCodeAt(0) || event.keyCode == "V".charCodeAt(0)) {
         console.log(stringify(PixelAnnotationTool.rule));
-    } else if (event.keyCode == "p".charCodeAt(0) || event.keyCode == "P".charCodeAt(0)) {
+    } else if (event.keyCode == "p".charCodeAt(0) || event.keyCode == "P".charCodeAt(0) || event.keyCode == ">".charCodeAt(0)) {
         selectParentNode();
     }
 
@@ -224,7 +215,6 @@ function updateSettingByData() {
             }
         }
         var nodeHtml = tplNode(rule);
-        // console.log(nodeHtml);
         var nodeDom = $(nodeHtml);
         if (rule.last) {
             nodeDom.addClass("last");
@@ -367,7 +357,7 @@ $(document).on("click", ".pixel-node-action-change-name", function() {
     var node = getNodeByUUID(PixelAnnotationTool.rule, uuid);
 
     if (node) {
-        var newname = prompt("请输入新的节点名", node.name);
+        var newname = prompt("Please input the node name", node.name);
         if (newname) {
             node.name = newname;
             updateSettingByData();
@@ -381,7 +371,7 @@ $(document).on("click", ".pixel-node-type", function() {
     var uuid = $(this).attr("uuid");
     var node = getNodeByUUID(PixelAnnotationTool.rule, uuid);
     if (node) {
-        var newtype = prompt("请输入新的类型，目前仅支持 '{}', '[]', 'string' ", node.type);
+        var newtype = prompt("Please input the type. currently support : '{}', '[]', 'string' ", node.type);
 
         if (newtype && (newtype == '[]' || newtype == '{}' || newtype =='string')) {
             node.type = newtype;
@@ -391,7 +381,7 @@ $(document).on("click", ".pixel-node-type", function() {
                 }
             }
         } else {
-            alert("目前还不支持你输入的类型");
+            pixelAlert("can not use this type");
         }
         updateSettingByData();
     }
@@ -401,8 +391,7 @@ $(document).on("click", ".pixel-node-type", function() {
 
 // 创建默认节点
 $(document).on("click", ".action-create", function(e) {
-    console.log(".action-create click");
-    var newtype = prompt("请输入根节点的类型，目前仅支持 '{}', '[]'", "");
+    var newtype = prompt("Please input the root node type. currently support : '{}', '[]'", "");
     if (newtype) {
         if (newtype == '{}' || newtype == '[]') {
             PixelAnnotationTool.rule = {
@@ -413,7 +402,7 @@ $(document).on("click", ".action-create", function(e) {
             tabSwitch();
             updateSettingByData();
         } else {
-            alert("输入错误");
+            alert("Input error");
         }
     }
     e.preventDefault();
@@ -429,7 +418,6 @@ $(document).on("click", ".pixel-open-tree", function() {
 });
 
 $(document).on("mousedown", ".pixel-console-action-inspect", function() {
-    console.log(event.ctrlKey);
     cancelPixelActiveMask();
     PixelAnnotationTool.inspecting = true;
     $(this).text("Q to Quit");
@@ -438,8 +426,10 @@ $(document).on("mousedown", ".pixel-console-action-inspect", function() {
         console.log("Ctrl Key Pressed");
         PixelAnnotationTool.multiInspectingMode = true;
         PixelAnnotationTool.inspectingStack = [];
+        pixelAlert("Start Inspecting , Press Q when you highlight the right element, You need select 2 similar element to get the selector for List");
     } else {
         PixelAnnotationTool.multiInspectingMode = false;
+        pixelAlert("Start Inspecting , Press Q when you highlight the right element");
     }
     console.log("start inspecting");
 });
@@ -490,7 +480,7 @@ function updatePixelNodeList(rule, prefix){
     var $selectDom = $(".pixel-console-node");
     $selectDom.empty();
 
-    $selectDom.append("<option value='-'>--请选择节点--</option>");
+    $selectDom.append("<option value='-'>--Select Node--</option>");
 
     _update(PixelAnnotationTool.rule, "");
 
@@ -631,7 +621,7 @@ function addFilter() {
     var method = $(".pixel-console-method").val();
 
     if (curDom == "-") {
-        alert("请选择正确的节点");
+        alert("Please choose the right node");
         return ;
     }
 
@@ -655,7 +645,7 @@ function addFilter() {
 $(document).on("click", ".pixel-update-filter", function() {
     var curDom = $(".pixel-console-node").val();
     if (curDom == "-") {
-        alert("请选择正确的节点");
+        alert("Please choose the right node");
         return ;
     }
 
@@ -682,12 +672,7 @@ $(document).on("click", ".pixel-update-filter", function() {
     }
 
     function _suc() {
-        noty({
-            text : "更新成功" ,
-            type : "success",
-            layout: "center",
-            timeout: 1000
-        });
+        pixelSuccess("Update successfuly");
     }
 
     return false;
@@ -701,7 +686,7 @@ function saveSelector() {
     var method = $(".pixel-console-method").val();
 
     if (curDom == "-") {
-        alert("请选择正确的节点");
+        alert("Please choose the right node");
         return ;
     }
 
@@ -721,14 +706,7 @@ function saveSelector() {
     }
 
     updatedStructrue();
-
-    noty({
-        text : "保存成功，已将将 Selector {" + selector +"} 关联到标签 : " + node.name ,
-        type : "success",
-        layout: "center",
-        timeout: 1000
-    });
-
+    pixelSuccess( "Save Successfully ，Bind Selector {" + selector +"} To : " + node.name);
 }
 
 
@@ -777,12 +755,7 @@ $(document).on('confirm', '.remodal[data-remodal-id="save-rule"]', function () {
     if (PixelAnnotationTool.rule) {
         PixelAnnotationTool.rule.regex = regex;
         RuleStorage.updateRule(RuleStorage.TYPE_REGEX, name, PixelAnnotationTool.rule, function() {
-            noty({
-                text : "保存成功",
-                type : "success",
-                layout: "center",
-                timeout: 1000
-            });
+            pixelSuccess("Save successfully");
         });
     }
 
@@ -791,23 +764,18 @@ $(document).on('confirm', '.remodal[data-remodal-id="save-rule"]', function () {
 
 function saveTemplate() {
 
-    var name = prompt("请输入要保存模板的名字", "");
+    var name = prompt("Please input template name ", "");
 
     name = $.trim(name);
 
     if (name == "") {
-        alert("模板名字不能为空");
+        alert("Template name can not be null");
         return;
     }
 
     if (PixelAnnotationTool.rule) {
         RuleStorage.updateRule(RuleStorage.TYPE_TEMPLATE, name, PixelAnnotationTool.rule, function() {
-            noty({
-                text : "保存模板成功",
-                type : "success",
-                layout: "center",
-                timeout: 1000
-            });
+            pixelSuccess("Template save successfully");
         });
     }
 
@@ -926,12 +894,7 @@ function loadRule() {
                     updatePixelNodeList();
                 }
 
-                noty({
-                    text : "Load Rule Successful",
-                    type : "infomation",
-                    layout: "center",
-                    timeout: 2000
-                });
+                pixelAlert("Load Rule Successful");
             }
 
             return false;
@@ -949,24 +912,14 @@ function loadRule() {
             tr.remove();
 
             RuleStorage.deleteRuleByType(name, type, function() {
-                noty({
-                    text : "Delete Successful",
-                    type : "infomation",
-                    layout: "center",
-                    timeout: 2000
-                });
+                pixelAlert("Delete Successful");
             });
 
             return false;
         }
 
         function viewAction() {
-            noty({
-                text : "Please View the rule Structure on Chrome DevTool Console",
-                type : "infomation",
-                layout: "center",
-                timeout: 2000
-            });
+            pixelAlert("Please View the rule Structure on Chrome DevTool Console");
             var type = $(this).attr("type");
             var name = $(this).attr("key");
             if (rules[type] && rules[type][name]) {
@@ -984,20 +937,10 @@ function loadRule() {
 function toggleShortcut() {
     if (PixelAnnotationTool.shortcutOn) {
         PixelAnnotationTool.shortcutOn = false;
-        noty({
-            text : "Keyboard shortcut is OFF",
-            type : "infomation",
-            layout: "center",
-            timeout: 2000
-        });
+        pixelAlert("Keyboard shortcut is OFF");
     } else {
         PixelAnnotationTool.shortcutOn = true;
-        noty({
-            text : "Keyboard shortcut is ON",
-            type : "infomation",
-            layout: "center",
-            timeout: 2000
-        });
+        pixelAlert("Keyboard shortcut is ON");
     }
 }
 
@@ -1011,7 +954,7 @@ function pixelHelp() {
 
 function sampleData() {
     if (PixelAnnotationTool.rule == null) {
-        alert("Rule is Empty, Please create one rule first!");
+        pixelAlert("Rule is Empty, Please create one rule first!");
         return;
     }
 
@@ -1055,6 +998,33 @@ function updatedStructrue() {
     PixelAnnotationTool.autosave = false;
 }
 
+
+function pixelAlert(word, timeout) {
+    if (!timeout) {
+        timeout = 2000;
+    }
+
+    return noty({
+        text : word,
+        type : "infomation",
+        layout: "center",
+        timeout: timeout
+    });
+}
+
+function pixelSuccess(word, timeout) {
+    if (!timeout) {
+        timeout = 2000;
+    }
+
+    return noty({
+        text : word,
+        type : "success",
+        layout: "center",
+        timeout: timeout
+});
+}
+
 /***
  对当前的selecor操作 end
 **/
@@ -1062,10 +1032,9 @@ function updatedStructrue() {
 /*** ***/
 $(window).on("beforeunload", function() {
     if (PixelAnnotationTool.rule && !PixelAnnotationTool.autosave) {
-        console.log("need to save before unload!");
         RuleStorage.updateRule(RuleStorage.TYPE_AUTOSAVE, window.location.href, PixelAnnotationTool.rule, function() {
             PixelAnnotationTool.autosave = true;
-            console.log("saved!");
+            console.log("auto saved!");
             window.close();
         });
     }
