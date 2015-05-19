@@ -94,4 +94,4 @@ src/tpl/*.html
 src/less/*.css
 
 .DS_Store
-packaged
+packaged/*.crx
