@@ -27,6 +27,7 @@
       "less-loader" : "",
       "jade-loader" : "",
       "url-loader" : "",
-      "html-loader" : ""
+      "html-loader" : "",
+      "bower" : ""
   }
 }

@@ -2,8 +2,6 @@ Pixel Annotation_Tool
 ===============
 
 #### 模板结构
-
-
 - name 属性
 
     节点的名字, 根节点用[root]名字
@@ -142,3 +140,27 @@ filter1:argument1:argument2
 * split 等同于 javascript 的String.split方法, 返回数组格式
 * replace 等同于javascript的 stringObject.replace(regexp/substr,replacement) 可以使用正则表达式
 * match 等于于javascript的 stringObject.match(regexp) 返回匹配到的内容
+
+
+#### Build
+```
+## Compile
+
+cd annotation_tool
+npm install --save
+bower install
+
+cd bower_components/purecss
+npm install --save
+sudo npm install -g grunt-cli
+grunt
+
+cd ../..
+webpack
+
+## Build Chrome extension package
+sudo gem install crxmake 
+./build.sh
+
+The chrome extension crx file locate on ./packaged/ path
+```
