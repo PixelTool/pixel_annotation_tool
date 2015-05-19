@@ -5,7 +5,7 @@ require("jquery");
 // configure remoal
 require("remodal");
 require("noty");
-// var jsdom = require("jsdom");
+require("tooltipster");
 
 var uuid                = require('node-uuid');
 var cp                  = require("./libs/PixelCssPath.js");
@@ -13,6 +13,7 @@ var stringify           = require("json-stringify-pretty-compact");
 var encodeHelper        = require("./libs/EncodeHelper");
 var Pixel               = require("pixeljs");
 var RuleStorage         = require("./libs/RuleStorage");
+var ListNodes           = require("./libs/ListNodes");
 
 require("./less/setting.less");
 require("purecss");
@@ -36,6 +37,8 @@ var PixelAnnotationTool = {};
 
 PixelAnnotationTool.inspecting = false;
 PixelAnnotationTool.lastInspectTarget = false;
+PixelAnnotationTool.multiInspectingMode = false;
+PixelAnnotationTool.inspectingStack = [];
 
 PixelAnnotationTool.rule = null;
 PixelAnnotationTool.shortcutOn = true;
@@ -86,6 +89,8 @@ $(function() {
 
     console.log("starting");
 
+
+
     var notyStarting = noty({
         text : "---------------------- <br> 标注脚本已经启动，点击键盘'A'呼出标注菜单 <br>------------------------<br>",
         type : "infomation",
@@ -103,6 +108,9 @@ $(function() {
         $(tplSaveRule()).appendTo("body");
         $(tplLoadRule()).appendTo("body");
         $(tplAddFilter()).appendTo("body");
+
+        // activate tooltip
+        $('.tooltip').tooltipster();
     }
 
     // restore from storage
@@ -147,15 +155,12 @@ $(document).keypress(function(event) {
     }
 
     // 点击A呼出
-    if (event.keyCode == "a".charCodeAt(0) || event.keyCode == "A".charCodeAt(0)) {
-        console.log("Alt +  A Pressed");
-        openSettingPanel();
-    } else if (event.keyCode == "q".charCodeAt(0) || event.keyCode == "Q".charCodeAt(0)) {
+    if (event.keyCode == "q".charCodeAt(0) || event.keyCode == "Q".charCodeAt(0)) {
         stopInspect();
-    } else if (event.keyCode == "h".charCodeAt(0) || event.keyCode == "H".charCodeAt(0)) {
-        console.log(PixelAnnotationTool);
     } else if (event.keyCode == "v".charCodeAt(0) || event.keyCode == "V".charCodeAt(0)) {
         console.log(stringify(PixelAnnotationTool.rule));
+    } else if (event.keyCode == "p".charCodeAt(0) || event.keyCode == "P".charCodeAt(0)) {
+        selectParentNode();
     }
 
 });
@@ -423,12 +428,19 @@ $(document).on("click", ".pixel-open-tree", function() {
     openSettingPanel();
 });
 
-$(document).on("click", ".pixel-console-action-inspect", function() {
+$(document).on("mousedown", ".pixel-console-action-inspect", function() {
+    console.log(event.ctrlKey);
     cancelPixelActiveMask();
     PixelAnnotationTool.inspecting = true;
-
     $(this).text("Q to Quit");
 
+    if (event.ctrlKey == 1 || event.metaKey) {
+        console.log("Ctrl Key Pressed");
+        PixelAnnotationTool.multiInspectingMode = true;
+        PixelAnnotationTool.inspectingStack = [];
+    } else {
+        PixelAnnotationTool.multiInspectingMode = false;
+    }
     console.log("start inspecting");
 });
 
@@ -560,13 +572,58 @@ $(document).on("change", ".pixel-console-node", function() {
 // 取消inspect
 
 function stopInspect() {
-    PixelAnnotationTool.inspecting = false;
-    $(".pixel-console-action-inspect").text("Inspect");
-    $("*").removeClass("pixel-current-target-mask");
-    PixelAnnotationTool.lastInspectTarget = null;
-    showPixelActiveMask();
+    if (PixelAnnotationTool.multiInspectingMode == false) {
+        PixelAnnotationTool.inspecting = false;
+        $(".pixel-console-action-inspect").text("Inspect");
+        $("*").removeClass("pixel-current-target-mask");
+        PixelAnnotationTool.lastInspectTarget = null;
+        showPixelActiveMask();
+    } else {
+        if (PixelAnnotationTool.inspectingStack.length == 0) {
+            PixelAnnotationTool.inspectingStack.push($(".pixel-console-selector").val());
+            $("*").removeClass("pixel-current-target-mask");
+            PixelAnnotationTool.lastInspectTarget = null;
+        } else {
+            PixelAnnotationTool.inspecting = false;
+            var last = PixelAnnotationTool.inspectingStack.pop();
+            var cur = $(".pixel-console-selector").val();
+
+            $("*").removeClass("pixel-current-target-mask");
+            PixelAnnotationTool.lastInspectTarget = null;
+
+            // caculate
+            var multi = ListNodes.getListNodesSelector(last, cur);
+
+            if (multi == false) {
+                alert("Get Multi Node Failed");
+                $(".pixel-console-selector").val("");
+            } else {
+                $(".pixel-console-selector").val(multi);
+            }
+            $(".pixel-console-action-inspect").text("Inspect");
+
+            showPixelActiveMask();
+        }
+    }
 }
 
+// 选择父node 的 selector
+function selectParentNode() {
+    if (PixelAnnotationTool.inspecting == false) {
+        return;
+    }
+
+    var newTarget = PixelAnnotationTool.lastInspectTarget.parentNode;
+
+    if (newTarget == PixelAnnotationTool.lastInspectTarget ) {
+        return;
+    }
+    $("*").removeClass("pixel-current-target-mask");
+    $(".pixel-console-selector").val(cp.cssPath(newTarget, true));
+    $(newTarget).addClass("pixel-current-target-mask");
+
+    PixelAnnotationTool.lastInspectTarget = newTarget;
+}
 
 function addFilter() {
     var curDom = $(".pixel-console-node").val();

@@ -22,7 +22,7 @@ function getListNodesSelector (selA,selB) {
     if (arrA.join('>') === arrB.join('>')) {
         return arrA.join('>');
     }
-    return selA;
+    return false;
 }
 
 module.exports.getListNodesSelector = getListNodesSelector;
