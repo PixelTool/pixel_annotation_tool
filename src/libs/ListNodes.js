@@ -13,7 +13,7 @@ function getListNodesSelector (selA,selB) {
             diffIndex.push(i);
         }
     }
-    var pattern = /:nth\-child\(\d\)/
+    var pattern = /:nth\-child\(\d+\)/
     for (var i in diffIndex) {
         var index = diffIndex[i];
         arrA[index] = arrA[index].replace(pattern, '');
