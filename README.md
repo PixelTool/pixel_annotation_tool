@@ -1,6 +1,37 @@
 Pixel Annotation_Tool
 ===============
 
+#### About
+
+Pixel Annotation Tool is a chrome extension to generate Pixel Rule (which used by pixeljs or python module) by annotation in browser.
+
+It can both used for HTML structure and JSON structure ( you need to install JSONView chrome extension first)
+
+
+#### Build
+```
+## Compile
+
+cd annotation_tool
+npm install --save
+bower install
+
+cd bower_components/purecss
+npm install --save
+sudo npm install -g grunt-cli
+grunt
+
+cd ../..
+webpack
+
+## Build Chrome extension package
+sudo gem install crxmake
+./build.sh
+
+The chrome extension crx file locate on ./packaged/ path
+```
+
+
 #### 模板结构
 - name 属性
 
@@ -142,25 +173,4 @@ filter1:argument1:argument2
 * match 等于于javascript的 stringObject.match(regexp) 返回匹配到的内容
 
 
-#### Build
-```
-## Compile
 
-cd annotation_tool
-npm install --save
-bower install
-
-cd bower_components/purecss
-npm install --save
-sudo npm install -g grunt-cli
-grunt
-
-cd ../..
-webpack
-
-## Build Chrome extension package
-sudo gem install crxmake 
-./build.sh
-
-The chrome extension crx file locate on ./packaged/ path
-```
