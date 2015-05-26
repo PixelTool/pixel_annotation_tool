@@ -25,4 +25,29 @@ function getListNodesSelector (selA,selB) {
     return false;
 }
 
+function getJsonListNodesSelector (selA,selB) {
+    var arrA = selA.split(/\[\d+\]/),
+        arrB = selB.split(/\[\d+\]/);
+    var length = arrA.length > arrB.length ? arrA.length : arrB.length;
+
+    var diffIndex = [];
+    for (var i = 0; i < length; i++) {
+        console.log(arrA[i]);
+        if (arrA[i] !== arrB[i]) {
+            diffIndex.push(i);
+        }
+    }
+    var pattern = /\[\d+\]/
+    for (var i in diffIndex) {
+        var index = diffIndex[i];
+        arrA[index] = arrA[index].replace(pattern, '');
+        arrB[index] = arrB[index].replace(pattern, '');
+    }
+    if (arrA.join('>') === arrB.join('>')) {
+        return arrA.join('[*]');
+    }
+    return false;
+}
+
 module.exports.getListNodesSelector = getListNodesSelector;
+module.exports.getJsonListNodesSelector = getJsonListNodesSelector;

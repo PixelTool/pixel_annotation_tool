@@ -9,7 +9,9 @@ var pixelSuccess        = require("./NotyHelper").pixelSuccess;
 var ListNodes           = require("../libs/ListNodes");
 var PixelNodeUtils      = require("../libs/PixelNodeUtils");
 var cp                  = require("../libs/PixelCssPath.js");
+var jp                  = require("../libs/PixelJsonPath.js");
 var Pixel               = require("pixeljs");
+var PageFormatDetector  = require("../libs/PageFormatDetector");
 
 
 function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
@@ -47,6 +49,7 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
             console.log("Ctrl Key Pressed");
             PixelAnnotationTool.multiInspectingMode = true;
             PixelAnnotationTool.inspectingStack = [];
+            PixelAnnotationTool.inspectingJsonStack = [];
             pixelAlert("Start Inspecting , Press Q when you highlight the right element, You need select 2 similar element to get the selector for List");
         } else {
             PixelAnnotationTool.multiInspectingMode = false;
@@ -76,7 +79,12 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
         if (node) {
             if(node.source) {
                 if (node.source.selector != null) {
-                    $(".pixel-console-selector").val(node.source.selector);
+                    $(".pixel-console-selector").attr("cssPath", node.source.selector);
+                    if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+                        $(".pixel-console-selector").val(node.source.jsonPath);
+                    } else {
+                        $(".pixel-console-selector").val(node.source.selector);
+                    }
                 } else {
                     $(".pixel-console-selector").val("");
                 }
@@ -104,14 +112,27 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
             showPixelActiveMask();
         } else {
             if (PixelAnnotationTool.inspectingStack.length == 0) {
-                PixelAnnotationTool.inspectingStack.push($(".pixel-console-selector").val());
+
+                if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+                    PixelAnnotationTool.inspectingStack.push($(".pixel-console-selector").attr("cssPath"));
+                    PixelAnnotationTool.inspectingJsonStack.push($(".pixel-console-selector").val());
+                } else {
+                    PixelAnnotationTool.inspectingStack.push($(".pixel-console-selector").val());
+                }
+
                 $("*").removeClass("pixel-current-target-mask");
                 PixelAnnotationTool.lastInspectTarget = null;
             } else {
                 PixelAnnotationTool.inspecting = false;
                 var last = PixelAnnotationTool.inspectingStack.pop();
-                var cur = $(".pixel-console-selector").val();
-
+                var lastJson = PixelAnnotationTool.inspectingJsonStack.pop();
+                var cur, curJson;
+                if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+                    cur = $(".pixel-console-selector").attr("cssPath");
+                    curJson = $(".pixel-console-selector").val();
+                } else {
+                    cur = $(".pixel-console-selector").val();
+                }
                 $("*").removeClass("pixel-current-target-mask");
                 PixelAnnotationTool.lastInspectTarget = null;
 
@@ -122,8 +143,17 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
                 if (multi == false) {
                     alert("Get Multi Node Failed");
                     $(".pixel-console-selector").val("");
+                    $(".pixel-console-selector").attr("cssPath", "");
                 } else {
-                    $(".pixel-console-selector").val(multi);
+                    if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+                        var multiJson = ListNodes.getJsonListNodesSelector(lastJson, curJson);
+                        $(".pixel-console-selector").val(multiJson);
+                        $(".pixel-console-selector").attr("cssPath", multi);
+                    } else {
+                        $(".pixel-console-selector").val(multi);
+                        $(".pixel-console-selector").attr("cssPath", multi);
+                    }
+
                 }
                 $(".pixel-console-action-inspect").text("Inspect");
 
@@ -217,7 +247,13 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
     function saveSelector() {
         // 获取当前节点
         var curDom = $(".pixel-console-node").val();
-        var selector = $(".pixel-console-selector").val();
+        var selector;
+        if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+            selector =  $(".pixel-console-selector").attr("cssPath");
+        } else {
+            selector =  $(".pixel-console-selector").val();
+        }
+
         var method = $(".pixel-console-method").val();
 
         if (curDom == "-") {
@@ -229,6 +265,10 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
             "selector"  :  selector,
             "method"    :  method
         };
+
+        if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+            source['jsonPath'] = $(".pixel-console-selector").val();
+        }
 
         console.log(curDom);
 
@@ -257,18 +297,33 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
             return;
         }
 
+        if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+            if (!($(e.target).is(".property") || $(e.target).is("ul.array > li"))) {
+                return;
+            }
+        }
+
         var target = e.target;
 
         if (target == PixelAnnotationTool.lastInspectTarget) {
-            return ;
+            return;
         } else {
             $(PixelAnnotationTool.lastInspectTarget).removeClass("pixel-current-target-mask");
         }
 
         PixelAnnotationTool.lastInspectTarget = target;
 
-        $(".pixel-console-selector").val(cp.cssPath(target, true));
-
+        if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+            var data = jp.jsonPath(target, true);
+            if (data) {
+                $(".pixel-console-selector").val(data[0]);
+                $(".pixel-console-selector").attr("cssPath", data[1]);
+            }
+        } else {
+            var cssPath = cp.cssPath(target, true);
+            $(".pixel-console-selector").val(cssPath);
+            $(".pixel-console-selector").attr("cssPath", cssPath);
+        }
         $(target).addClass("pixel-current-target-mask");
 
         //  设定selector
@@ -279,6 +334,10 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
      **/
     function showPixelActiveMask()  {
         var selector = $(".pixel-console-selector").val();
+
+        if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
+            selector = $(".pixel-console-selector").attr("cssPath");
+        }
 
         if (!selector || selector == "body") {
             return;

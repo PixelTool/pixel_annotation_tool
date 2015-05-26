@@ -4,7 +4,6 @@
 
 var rs = require("./libs/RuleStorage");
 
-console.log("hi");
 //rs.updateRule(rs.TYPE_TEMPLATE, "hello2", {"demo" : "hi"}, function(){ console.log("saved")});
 
 var testRule = {
@@ -59,4 +58,8 @@ var testRule = {
 
 var resultRule = rs.deepCopyWithoutSources(testRule);
 
-console.log(resultRule);
+//console.log(resultRule);
+
+var JsonListNodes = require("./libs/ListNodes");
+var path = JsonListNodes.getJsonListNodesSelector("$.hello.world[3].a", "$.hello.world[4].a");
+console.log(path);

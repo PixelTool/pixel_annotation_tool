@@ -8,10 +8,8 @@ require("tooltipster");
 
 var RuleStorage         = require("./libs/RuleStorage");
 var PixelNodeUtils      = require("./libs/PixelNodeUtils");
-
+var PageFormatDetector  = require("./libs/PageFormatDetector");
 var pixelAlert          = require("./modules/NotyHelper").pixelAlert;
-var pixelSuccess        = require("./modules/NotyHelper").pixelSuccess;
-
 
 require("./less/setting.less");
 require("purecss");
@@ -34,12 +32,14 @@ PixelAnnotationTool.inspecting = false;
 PixelAnnotationTool.lastInspectTarget = false;
 PixelAnnotationTool.multiInspectingMode = false;
 PixelAnnotationTool.inspectingStack = [];
+PixelAnnotationTool.inspectingJsonStack = [];
 
 PixelAnnotationTool.rule = null;
 PixelAnnotationTool.shortcutOn = true;
 PixelAnnotationTool.autosave = false;
 
 PixelAnnotationTool.currentRuleRegex = null;
+PixelAnnotationTool.pageFormat = null;
 
 
 // Load Modules
@@ -59,6 +59,14 @@ var autoSaveTimer = setInterval(function() {
         });
     }
 }, 10000);
+
+var detect = PageFormatDetector.detect();
+
+PixelAnnotationTool.pageFormat = detect.format;
+
+if (detect.format == PageFormatDetector.FORMAT_JSON) {
+    console.log("is json format");
+}
 
 // bootstrap
 $(function() {
