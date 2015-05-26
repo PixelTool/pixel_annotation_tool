@@ -1,8 +1,8 @@
 {
-  "manifest_version": 4,
+  "manifest_version": 5,
   "name": "Pixel Annotation Tool",
   "description": "This extension for generate pixel rule script",
-  "version": "1.6",
+  "version": "1.7",
   "background": {
     "scripts": ["./build/background.js"]
   },

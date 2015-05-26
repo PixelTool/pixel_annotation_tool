@@ -28,25 +28,39 @@ function getListNodesSelector (selA,selB) {
 function getJsonListNodesSelector (selA,selB) {
     var arrA = selA.split(/\[\d+\]/),
         arrB = selB.split(/\[\d+\]/);
+
+    // hehe
+    if (arrA.length != arrB.length) {
+        return false;
+    }
+
     var length = arrA.length > arrB.length ? arrA.length : arrB.length;
+
+    var matchA = selA.match(/\[\d+\]/g);
+    var matchB = selB.match(/\[\d+\]/g);
+
+    var matchlength = matchA.length > matchB.length ? matchA.length : matchB.length;
 
     var diffIndex = [];
     for (var i = 0; i < length; i++) {
         console.log(arrA[i]);
-        if (arrA[i] !== arrB[i]) {
+        if (matchA[i] !== matchB[i]) {
             diffIndex.push(i);
         }
     }
-    var pattern = /\[\d+\]/
-    for (var i in diffIndex) {
-        var index = diffIndex[i];
-        arrA[index] = arrA[index].replace(pattern, '');
-        arrB[index] = arrB[index].replace(pattern, '');
+
+    var jsonPath = "";
+    for (var i = 0; i < arrA.length; i++) {
+        jsonPath += arrA[i];
+        if ($.inArray(i, diffIndex) == -1) {
+            if (i < matchlength) {
+                jsonPath += matchA[i];
+            }
+        } else {
+            jsonPath += "[*]";
+        }
     }
-    if (arrA.join('>') === arrB.join('>')) {
-        return arrA.join('[*]');
-    }
-    return false;
+    return jsonPath;
 }
 
 module.exports.getListNodesSelector = getListNodesSelector;
