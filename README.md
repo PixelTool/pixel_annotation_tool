@@ -49,9 +49,10 @@ The chrome extension crx file locate on ./packaged/ path
 
 - source
     - method
-        - 'text'
-        - 'html'
-        - '[attr]'
+        - 'text'            - 类似 Dom.textContext
+        - 'innertext'       - 类似 Dom.innerText
+        - 'html'            - 类似 Dom.innerHTML
+        - '[attr]'          - 类似 Dom.getAttribute
     - selector : css 选择器
     - filter :  过滤器
 

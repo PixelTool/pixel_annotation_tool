@@ -94,6 +94,12 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
                 } else {
                     $(".pixel-console-method").val("text");
                 }
+
+                if (node.source.filter != null) {
+                    $(".pixel-update-filter").attr("filter", node.source.filter);
+                } else {
+                    $(".pixel-update-filter").attr("filter", "");
+                }
             } else {
                 $(".pixel-console-selector").val("");
                 $(".pixel-console-method").val("text");
@@ -199,8 +205,8 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
 
         var inputFilter = dom.find("[name=pixel-filter]");
 
-        if (node.filter) {
-            inputFilter.val(node.filter);
+        if (node.source && node.source.filter) {
+            inputFilter.val(node.source.filter);
         } else {
             inputFilter.val("");
         }
@@ -215,19 +221,26 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
         }
 
         var node = PixelNodeUtils.getNodeByUUID(PixelAnnotationTool.rule, curDom);
+
+
         var dom =  $("[data-remodal-id=add-filter]");
         var inputFilter = dom.find("[name=pixel-filter]");
 
         var filter = $.trim(inputFilter.val());
 
         if (filter == "") {
-            delete node["filter"];
+            if (node.source) {
+                delete node.source["filter"];
+            }
             _suc()
             return false;
         } else {
             var ok = Pixel.validateRule(filter);
             if (ok) {
-                node.filter = filter;
+                $(".pixel-update-filter").attr("filter", filter);
+                if (node.source) {
+                    node.source.filter = filter;
+                }
                 _suc();
                 return false;
             } else {
@@ -261,10 +274,16 @@ function SelectorManagerAndInspector($, window, document, PixelAnnotationTool) {
             return ;
         }
 
+        var filter = $(".pixel-update-filter").attr("filter");
+
         var source = {
             "selector"  :  selector,
             "method"    :  method
         };
+
+        if (filter != null && filter != "") {
+            source.filter = filter;
+        }
 
         if (PixelAnnotationTool.pageFormat == PageFormatDetector.FORMAT_JSON) {
             source['jsonPath'] = $(".pixel-console-selector").val();

@@ -20,14 +20,14 @@
     "pixeljs": "^1.0.0"
   },
   "devDependencies": {
-      "webpack" : "",
-      "bower-webpack-plugin " : "",
-      "style-loader" : "",
-      "css-loader" : "",
-      "less-loader" : "",
-      "jade-loader" : "",
-      "url-loader" : "",
-      "html-loader" : "",
-      "bower" : ""
+    "webpack": "",
+    "bower-webpack-plugin ": "",
+    "style-loader": "",
+    "css-loader": "",
+    "less-loader": "",
+    "jade-loader": "",
+    "url-loader": "",
+    "html-loader": "",
+    "bower": ""
   }
 }
