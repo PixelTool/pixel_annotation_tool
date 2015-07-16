@@ -49,8 +49,58 @@ var TemplateAndRuleManager = function($, window, document, PixelAnnotationTool) 
             closeOnAnyClick:false
         });
 
-        $(".view-rule-ta").text(stringify(PixelAnnotationTool.rule));
+        $(".view-rule-ta").val(stringify(PixelAnnotationTool.rule));
     }
+
+    $(document).on('click', "[action=view-stringify-text]", function(){
+
+        var rule = $(".view-rule-ta").val();
+        var json = null;
+        try {
+            json = JSON.parse(rule);
+
+            if (json == null) {
+                alert("Invalid Input，Please check if the input is a correct JSON format");
+                return false;
+            }
+
+            var newWin = window.open(null);
+            newWin.document.write(JSON.stringify(json));
+
+        } catch(e) {
+            alert("Invalid Input，Please check if the input is a correct JSON format");
+            return false;
+        }
+
+        return false;
+    });
+
+    $(document).on('click', "[action=view-update-rule]", function(){
+        var rule = $(".view-rule-ta").val();
+        var json = null;
+        console.log(rule);
+        try {
+            json = JSON.parse(rule);
+
+            console.log(json);
+            if (json == null || json == "") {
+                alert("Invalid Input，Please check if the input is a correct JSON format");
+                return false;
+            }
+
+            PixelAnnotationTool.rule = json;
+            pixelSuccess("Update Successfully");
+        } catch(e) {
+            console.log(e);
+            alert("Invalid Input，Please check if the input is a correct JSON format");
+            return false;
+        }
+
+        return false;
+    });
+
+    $(document).on('click'
+    )
 
     function genDownloadRule(obj) {
         $(obj).attr("href", "data:application/octet-stream;base64," + encodeHelper.base64Encode(stringify(PixelAnnotationTool.rule)));
